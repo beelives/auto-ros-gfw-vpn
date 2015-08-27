@@ -1,0 +1,18 @@
+/ip route rule add dst-address="8.8.8.8" action=lookup table=vpn_rt comment="域名防污染";
+
+:global array {\
+"ip138\\.com";"google\\.com";"google\\.cn";"googleusercontent\\.com";"youtube\\.com";\
+"facebook\\.com";"twitter\\.com";"zh.wikipedia\\.org";"wordpress\\.org";"wordpress\\.com";\
+"blogspot\\.com";"instagram\\.com";"flickr\\.com";"dropbox\\.com";"mobile01\\.com";\
+;}
+
+:foreach n in=$array do={
+	:put $n;
+#获取所有DNS Cache记录
+	:foreach i in=[/ip dns cache all find where name ~".*$n(.*)\?"&&(type="A")] do={
+		:local cacheName [/ip dns cache all get value-name=name $i];
+		:local cacheIP [/ip dns cache all get value-name=data $i];
+		/ip firewall address-list remove  [/ip firewall address-list find address="$cacheIP"]
+		/ip firewall address-list add address="$cacheIP" list=gfw_list comment="$cacheName";
+	}
+}
