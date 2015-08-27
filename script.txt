@@ -1,0 +1,44 @@
+/ip route rule add dst-address="8.8.8.8" action=lookup table=vpn_rt comment="域名防污染";
+
+:global array {\
+"ip138\\.com";"google\\.com";"google\\.cn";"google\\.co";"googleusercontent\\.com";"youtube\\.com";\
+"facebook\\.com";"twitter\\.com";"zh.wikipedia\\.org";"wordpress\\.org";"wordpress\\.com";\
+"blogspot\\.com";"instagram\\.com";"fc2\\.com";"chenghuavideo\\.asia";"tokyocn\\.com";\
+"bannedbook\\.org";"flickr\\.com";"dropbox\\.com";"mobile01\\.com";"sexinsex\\.net";\
+"yijielufu.com"\
+;}
+#:for n from=0 to=[:len $array] do={
+:foreach n in=$array do={
+	:put $n;
+#获取所有DNS Cache记录
+	:foreach i in=[/ip dns cache all find where name ~".*$n(.*)\?"&&(type="A")] do={
+#	:foreach i in=[/ip dns cache find where name ~".*$n(.*)\?"] do={
+#		:local cacheName [/ip dns cache get $i name];
+#		:local cacheIP [/ip dns cache get $i address];
+		:local cacheName [/ip dns cache all get value-name=name $i];
+		:local cacheIP [/ip dns cache all get value-name=data $i];
+#		:put $cacheName ;
+#		:put $cacheIP;
+		/ip firewall address-list remove  [/ip firewall address-list find address="$cacheIP"]
+		/ip firewall address-list add address="$cacheIP" list=gfw_list comment="$cacheName";
+	}
+}
+
+/ip route rule remove [/ip route rule find table=vpn_rt] ;
+/ip route rule add dst-address="8.8.8.8" action=lookup table=vpn_rt comment="域名防污染";
+:global array {"ip138\\.com";"google\\.com";"sexinsex\\.net";"avsow\\.net";"youtube\\.com";"facebook\\.com";"twitter\\.com";"wikipedia\\.org"}
+#:for n from=0 to=[:len $array] do={
+:foreach n in=$array do={
+#获取所有DNS Cache记录
+	:foreach i in=[/ip dns cache all find where name ~".*$n(.*)\?"&&(type="A")] do={
+#	:foreach i in=[/ip dns cache find where name ~".*$n(.*)\?"] do={
+#		:local cacheName [/ip dns cache get $i name];
+#		:local cacheIP [/ip dns cache get $i address];
+		:local cacheName [/ip dns cache all get value-name=name $i];
+		:local cacheIP [/ip dns cache all get value-name=data $i];
+#		:put $cacheName ;
+#		:put $cacheIP;
+#		/ip firewall address-list add address="$cacheIP" list=gfw_list comment="$cacheName";
+		/ip route rule add dst-address="$cacheIP" action=lookup table=vpn_rt comment="$cacheName"
+	}
+}
